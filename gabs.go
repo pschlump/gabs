@@ -26,9 +26,13 @@ package gabs
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
+
+	"github.com/pschlump/godebug"
 )
 
 /*---------------------------------------------------------------------------------------------------
@@ -216,16 +220,22 @@ func (g *Container) Set(value interface{}, path ...string) (*Container, error) {
 	object = g.object
 	for target := 0; target < len(path); target++ {
 		if mmap, ok := object.(map[string]interface{}); ok {
-			if target == len(path)-1 {
+			fmt.Fprintf(os.Stderr, "******* Target=%d Type=%T, %s\n", target, object, godebug.LF())
+			if target == len(path)-1 { // If matches to last element in path
+				fmt.Fprintf(os.Stderr, " ****** Setting: value=%s, %s\n", value, godebug.LF())
 				mmap[path[target]] = value
 			} else if mmap[path[target]] == nil {
+				fmt.Fprintf(os.Stderr, " ****** Type=%T, %s\n", object, godebug.LF())
 				mmap[path[target]] = map[string]interface{}{}
 			}
+			fmt.Fprintf(os.Stderr, " ****** Type=%T, mmap[path[target]]=%v %s\n", object, mmap[path[target]], godebug.LF())
 			object = mmap[path[target]]
 		} else {
+			fmt.Fprintf(os.Stderr, " ****** error - in setting, wrong type, Type=%T\n", object)
 			return &Container{nil}, ErrPathCollision
 		}
 	}
+	fmt.Fprintf(os.Stderr, "!****** done, %s, g.object=%s\n", object, g.object)
 	return &Container{object}, nil
 }
 
@@ -256,6 +266,11 @@ a non object type.
 */
 func (g *Container) Object(path ...string) (*Container, error) {
 	return g.Set(map[string]interface{}{}, path...)
+}
+
+// PJS
+func (g *Container) GetG() interface{} {
+	return g.object
 }
 
 /*
